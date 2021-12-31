@@ -17,7 +17,7 @@ classes = ["background", "person", "bicycle", "car", "motorcycle",
 
 filepath = r'C:\Users\edwar\Documents\Coding\Python\Videos'
 vidname = filepath + '\output_1.avi'
-flag = 0
+newVid = 0
 i = 25
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
 cam = cv2.VideoCapture(0)
@@ -25,7 +25,7 @@ pb  = 'frozen_inference_graph.pb'
 pbt = 'ssd_inception_v2_coco_2017_11_17.pbtxt'
 cvNet = cv2.dnn.readNetFromTensorflow(pb,pbt)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter(vidname, fourcc, 20.0, (640, 480))
+out = cv2.VideoWriter(vidname, fourcc, 10, (640, 480))
 cv2.namedWindow('OpenCV Detection')
 cv2.startWindowThread()
 
@@ -34,20 +34,20 @@ while cv2.getWindowProperty('OpenCV Detection', 0) >= 0:
   ret_val, img = cam.read()
   rows = img.shape[0]
   cols = img.shape[1]
-  cvNet.setInput(cv2.dnn.blobFromImage(img, size=(300,300), swapRB=True, crop=False))
+  cvNet.setInput(cv2.dnn.blobFromImage(img, size=(200,200), swapRB=True, crop=False))
   cvOut = cvNet.forward()
   for detection in cvOut[0,0,:,:]:
     score = float(detection[2])
     if score > 0.3:
       idx = int(detection[1])
       if classes[idx] == 'person':
-        i += 1
-        if i >= 25:
-          i = 25
-        if i > 17:
-          if flag == 1:
-            out = cv2.VideoWriter(vidname, fourcc, 20.0, (640, 480))
-            flag = 0
+        i += 8
+        if i >= 100:
+          i = 100
+        if i >= 24:
+          if newVid == 1:
+            out = cv2.VideoWriter(vidname, fourcc, 10, (640, 480))
+            newVid = 0
           left = detection[3] * cols
           top = detection[4] * rows
           right = detection[5] * cols
@@ -59,15 +59,16 @@ while cv2.getWindowProperty('OpenCV Detection', 0) >= 0:
           ret, frame = cam.read() 
           out.write(frame)
       elif classes[idx] != 'person':
-        i -= 1
+        i -= 4
         if i <= 0:
           i = 0
-        if i < 5:
-          flag = 1
-          now = datetime.now()
-          currenttime = now.strftime("%H:%M:%S")
-          stringtime = currenttime.replace(":", "_")
-          vidname = filepath + '\output_' + stringtime + '.avi'
+        if i <= 16:
+          newVid = 1
+          now = str(datetime.now())
+          time1 = now.replace(":", "_")
+          currenttime = time1.replace(" ","_")
+          vidname = filepath + '\output_' + currenttime + '.avi'
+          print(vidname)
           cv2.imshow('OpenCV Detection', img)                            
       print(i)
   if cv2.waitKey(1) == 27: 
