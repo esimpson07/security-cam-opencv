@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from datetime import datetime
 
 classes = ["background", "person", "bicycle", "car", "motorcycle",
   "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant",
@@ -14,13 +15,17 @@ classes = ["background", "person", "bicycle", "car", "motorcycle",
   "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "unknown",
   "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" ]
 
+filepath = r'C:\Users\edwar\Documents\Coding\Python\Videos'
+vidname = filepath + '\output_1.avi'
+flag = 0
+i = 25
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
 cam = cv2.VideoCapture(0)
 pb  = 'frozen_inference_graph.pb'
 pbt = 'ssd_inception_v2_coco_2017_11_17.pbtxt'
 cvNet = cv2.dnn.readNetFromTensorflow(pb,pbt)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+out = cv2.VideoWriter(vidname, fourcc, 20.0, (640, 480))
 cv2.namedWindow('OpenCV Detection')
 cv2.startWindowThread()
 
@@ -36,17 +41,35 @@ while cv2.getWindowProperty('OpenCV Detection', 0) >= 0:
     if score > 0.3:
       idx = int(detection[1])
       if classes[idx] == 'person':
-        ret, frame = cam.read() 
-        out.write(frame)
-        left = detection[3] * cols
-        top = detection[4] * rows
-        right = detection[5] * cols
-        bottom = detection[6] * rows
-        cv2.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
-        label = "{}: {:.2f}%".format(classes[idx],score * 100)
-        y = top - 15 if top - 15 > 15 else top + 15
-        cv2.putText(img, label, (int(left), int(y)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[idx], 2)
-  cv2.imshow('OpenCV Detection', img)                            
+        i += 1
+        if i >= 25:
+          i = 25
+        if i > 17:
+          if flag == 1:
+            out = cv2.VideoWriter(vidname, fourcc, 20.0, (640, 480))
+            flag = 0
+          left = detection[3] * cols
+          top = detection[4] * rows
+          right = detection[5] * cols
+          bottom = detection[6] * rows
+          cv2.rectangle(img, (int(left), int(top)), (int(right), int(bottom)), (23, 230, 210), thickness=2)
+          label = "{}: {:.2f}%".format(classes[idx],score * 100)
+          y = top - 15 if top - 15 > 15 else top + 15
+          cv2.putText(img, label, (int(left), int(y)),cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[idx], 2)
+          ret, frame = cam.read() 
+          out.write(frame)
+      elif classes[idx] != 'person':
+        i -= 1
+        if i <= 0:
+          i = 0
+        if i < 5:
+          flag = 1
+          now = datetime.now()
+          currenttime = now.strftime("%H:%M:%S")
+          stringtime = currenttime.replace(":", "_")
+          vidname = filepath + '\output_' + stringtime + '.avi'
+          cv2.imshow('OpenCV Detection', img)                            
+      print(i)
   if cv2.waitKey(1) == 27: 
     break
 cam.release()
